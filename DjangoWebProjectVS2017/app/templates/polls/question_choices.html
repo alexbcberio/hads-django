@@ -1,0 +1,31 @@
+﻿{% extends "app/layout.html" %}
+{% block content %}
+
+<h2>{{ title }}</h2>
+<h3>{{ message }}</h3>
+
+<h3>Pregunta: {{ question.question_text }}</h3>
+
+<table class="table">
+    <thead>
+        <tr class="text-center">
+            <td>Respuesta</td>
+            <td>Correcto/Incorrecto</td>
+            <td>Seleccionado</td>
+        </tr>
+    </thead>
+    <tbody>
+        {% for choice in question.choice_set.all %}
+        <tr {% if question.correct_choice == forloop.counter %}style="background-color: #dff0d8;"{% endif %}>
+            <td>{{ choice.choice_text }}</td>
+            <td class="text-center">
+                {% if question.correct_choice != forloop.counter %}
+                in{% endif %}correcto
+            </td>
+            <td class="text-center">{{ choice.votes }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

@@ -54,17 +54,37 @@ def about(request):
         }
     )
 def index(request):
-    latest_question_list = Question.objects.order_by('-pub_date')
+    latest_question_list = None
+    selected_subject = ""
+
+    if request.method == "POST":
+        selected_subject=request.POST['subject']
+        latest_question_list = Question.objects.order_by('-pub_date').filter(subject__iexact=selected_subject)
+    else:
+        latest_question_list = Question.objects.order_by('-pub_date')
+
+    question_subjects = Question.objects.values('subject')
+
     template = loader.get_template('polls/index.html')
     context = {
                 'title':'Lista de preguntas de la encuesta',
                 'latest_question_list': latest_question_list,
+                'question_subjects': question_subjects,
+                'selected_subject': selected_subject,
               }
     return render(request, 'polls/index.html', context)
 
 def detail(request, question_id):
      question = get_object_or_404(Question, pk=question_id)
      return render(request, 'polls/detail.html', {'title':'Respuestas asociadas a la pregunta:','question': question})
+
+def question_choices(request, question_id):
+    if not request.user.is_authenticated:
+        return HttpResponse('Unauthorized', status=401)
+
+    question = get_object_or_404(Question, pk=question_id)
+    
+    return render(request, 'polls/question_choices.html', {'title':'Respuestas asociadas a la pregunta:','question': question})
 
 def results(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
@@ -96,7 +116,7 @@ def question_new(request):
             minNumChoices = 2
             maxNumChoices = 4
             validNumChoices = int(request.POST["num_choices"]) >= minNumChoices and int(request.POST["num_choices"]) <= maxNumChoices
-            validCorrectChoice = int(request.POST["valid_choice"]) < minNumChoices or int(request.POST["valid_choice"]) > int(request.POST["num_choices"])
+            validCorrectChoice = int(request.POST["correct_choice"]) < minNumChoices or int(request.POST["correct_choice"]) >= int(request.POST["num_choices"])
 
             if not validNumChoices:
                 message = "El número de respuestas debe ser entre " + str(minNumChoices) + " y " + str(maxNumChoices)
@@ -106,6 +126,7 @@ def question_new(request):
                 question = form.save(commit=False)
                 question.pub_date=datetime.now()
                 question.save()
+                message = "Pregunta añadida!"
                 #return redirect('detail', pk=question_id)
                 #return render(request, 'polls/index.html', {'title':'Respuestas posibles','question': question})
         else:
@@ -130,7 +151,8 @@ def choice_add(request, question_id):
                 choice = form.save(commit = False)
                 choice.question = question
                 choice.vote = 0
-                choice.save()         
+                choice.save()
+                message = "Respuesta añadida!"
                 #form.save()
         #return render_to_response ('choice_new.html', {'form': form, 'poll_id': poll_id,}, context_instance = RequestContext(request),)
         return render(request, 'polls/choice_new.html', {'title':'Pregunta:'+ question.question_text,'form': form, 'message': message})

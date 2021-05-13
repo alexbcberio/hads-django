@@ -4,10 +4,34 @@
 <h2>{{ title }}.</h2>
 <h3>{{ message }}</h3>
 
+{% if request.user.is_authenticated %}
+    
+<h4>Filtrar por tema</h4>
+<form class="form-inline" method="post">
+    {% csrf_token %}
+    <input type="hidden" name="subject" value="" />
+    <select class="form-control" name="subject">
+        <option selected disabled>-- Selecciona un tema --</option>
+        {% for question in question_subjects %}
+            {% if question.subject %}
+            <option value="{{ question.subject }}" {% if request.method == "POST" and selected_subject == question.subject %} selected {% endif %}>{{ question.subject }}</option>
+            {% endif %}
+        {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-default">Filtrar</button>
+</form>
+{% endif %}
+
 {% if latest_question_list %}
+
     <ul>
     {% for question in latest_question_list %}
-        <li><a href="{% url 'detail' question.id %}">{{ question.question_text }}</a></li>
+        <li>
+            <a href="{% url 'detail' question.id %}">{{ question.question_text }}</a>
+            {% if request.user.is_authenticated %}
+            <a href="{% url 'question_choices' question.id %}">(ver respuestas)</a>
+            {% endif %}
+        </li>
     {% endfor %}
     </ul>
   

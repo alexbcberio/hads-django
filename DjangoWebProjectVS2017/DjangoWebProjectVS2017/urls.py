@@ -51,6 +51,7 @@ urlpatterns = [
     url(r'^polls/choice_add/(?P<question_id>\d+)/$', app.views.choice_add, name='choice_add'),
     url(r'^(?P<question_id>\d+)/results/$', app.views.results, name='results'),
     url(r'^polls/(?P<question_id>\d+)/$', app.views.detail, name='detail'),
+    url(r'^polls/(?P<question_id>\d+)/choices$', app.views.question_choices, name='question_choices'),
     url(r'^polls/(?P<question_id>\d+)/vote/$', app.views.vote, name='vote'),
     url(r'^polls/', app.views.index, name='index'),
    
