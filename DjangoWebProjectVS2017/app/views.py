@@ -89,9 +89,20 @@ def vote(request, question_id):
         return HttpResponseRedirect(reverse('results', args=(p.id,)))
 
 def question_new(request):
+        message = ""
         if request.method == "POST":
             form = QuestionForm(request.POST)
-            if form.is_valid():
+            
+            minNumChoices = 2
+            maxNumChoices = 4
+            validNumChoices = int(request.POST["num_choices"]) >= minNumChoices and int(request.POST["num_choices"]) <= maxNumChoices
+            validCorrectChoice = int(request.POST["valid_choice"]) < minNumChoices or int(request.POST["valid_choice"]) > int(request.POST["num_choices"])
+
+            if not validNumChoices:
+                message = "El número de respuestas debe ser entre " + str(minNumChoices) + " y " + str(maxNumChoices)
+            elif not validCorrectChoice:
+                message = "El número de la respuesta correcta debe estar entre" + str(minNumChoices) + " y " + request.POST["num_choices"]
+            elif form.is_valid():
                 question = form.save(commit=False)
                 question.pub_date=datetime.now()
                 question.save()
@@ -99,11 +110,21 @@ def question_new(request):
                 #return render(request, 'polls/index.html', {'title':'Respuestas posibles','question': question})
         else:
             form = QuestionForm()
-        return render(request, 'polls/question_new.html', {'form': form})
+
+        return render(request, 'polls/question_new.html', {'form': form, 'message': message})
 
 def choice_add(request, question_id):
+        form = ChoiceForm()
+        message = ""
+
         question = Question.objects.get(id = question_id)
-        if request.method =='POST':
+        numChoices = Choice.objects.filter(question = question_id).count()
+
+        if numChoices >= question.num_choices:
+            message = "Se han insertado el número máximo de respuestas posibles"
+            form = None
+
+        elif request.method =='POST':
             form = ChoiceForm(request.POST)
             if form.is_valid():
                 choice = form.save(commit = False)
@@ -111,10 +132,8 @@ def choice_add(request, question_id):
                 choice.vote = 0
                 choice.save()         
                 #form.save()
-        else: 
-            form = ChoiceForm()
         #return render_to_response ('choice_new.html', {'form': form, 'poll_id': poll_id,}, context_instance = RequestContext(request),)
-        return render(request, 'polls/choice_new.html', {'title':'Pregunta:'+ question.question_text,'form': form})
+        return render(request, 'polls/choice_new.html', {'title':'Pregunta:'+ question.question_text,'form': form, 'message': message})
 
 def chart(request, question_id):
     q=Question.objects.get(id = question_id)
