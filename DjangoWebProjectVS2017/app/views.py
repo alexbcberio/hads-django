@@ -60,7 +60,9 @@ def index(request):
     if request.method == "POST":
         selected_subject=request.POST['subject']
         latest_question_list = Question.objects.order_by('-pub_date').filter(subject__iexact=selected_subject)
-    else:
+    
+    # preload all questions only for logged in users
+    elif request.user.is_authenticated:
         latest_question_list = Question.objects.order_by('-pub_date')
 
     question_subjects = Question.objects.values('subject')
@@ -88,12 +90,24 @@ def question_choices(request, question_id):
 
 def results(request, question_id):
     question = get_object_or_404(Question, pk=question_id)
-    return render(request, 'polls/results.html', {'title':'Resultados de la pregunta:','question': question})
+    hasAnswered = False
+
+    if 'is_correct_answer' in request.GET:
+        hasAnswered = True
+        isCorrect = request.GET['is_correct_answer'] == 'True'
+
+    return render(request, 'polls/results.html', {
+        'title':'Resultados de la pregunta:',
+        'question': question,
+        'hasAnswered': hasAnswered,
+        'isCorrect': isCorrect,
+    })
 
 def vote(request, question_id):
     p = get_object_or_404(Question, pk=question_id)
+    choice = request.POST['choice']
     try:
-        selected_choice = p.choice_set.get(pk=request.POST['choice'])
+        selected_choice = p.choice_set.get(pk=choice)
     except (KeyError, Choice.DoesNotExist):
         # Vuelve a mostrar el form.
         return render(request, 'polls/detail.html', {
@@ -103,10 +117,12 @@ def vote(request, question_id):
     else:
         selected_choice.votes += 1
         selected_choice.save()
+
+        correct_choice = p.choice_set.all()[p.correct_choice - 1]
         # Siempre devolver un HttpResponseRedirect despues de procesar
         # exitosamente el POST de un form. Esto evita que los datos se
         # puedan postear dos veces si el usuario vuelve atras en su browser.
-        return HttpResponseRedirect(reverse('results', args=(p.id,)))
+        return HttpResponseRedirect(reverse('results', args=(p.id,)) + "?is_correct_answer=" + str(correct_choice.id == int(choice)))
 
 def question_new(request):
         message = ""
