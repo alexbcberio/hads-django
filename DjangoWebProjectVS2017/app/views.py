@@ -132,12 +132,12 @@ def question_new(request):
             minNumChoices = 2
             maxNumChoices = 4
             validNumChoices = int(request.POST["num_choices"]) >= minNumChoices and int(request.POST["num_choices"]) <= maxNumChoices
-            validCorrectChoice = int(request.POST["correct_choice"]) < minNumChoices or int(request.POST["correct_choice"]) >= int(request.POST["num_choices"])
+            validCorrectChoice = int(request.POST["correct_choice"]) >= 1 and int(request.POST["correct_choice"]) <= int(request.POST["num_choices"])
 
             if not validNumChoices:
                 message = "El número de respuestas debe ser entre " + str(minNumChoices) + " y " + str(maxNumChoices)
             elif not validCorrectChoice:
-                message = "El número de la respuesta correcta debe estar entre" + str(minNumChoices) + " y " + request.POST["num_choices"]
+                message = "El número de la respuesta correcta debe estar entre 1 y " + request.POST["num_choices"]
             elif form.is_valid():
                 question = form.save(commit=False)
                 question.pub_date=datetime.now()
