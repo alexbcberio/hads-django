@@ -6,7 +6,7 @@
 
 <h3>Pregunta: {{ question.question_text }}</h3>
 {% if error_message %}<p><strong style="color:red;"><b>{{ error_message }}</b></strong></p>{% endif %}
-<form action="{% url 'vote' question.id %}" method="post">
+<form action="{% url 'vote' question.id %}" method="post" id="form">
 {% csrf_token %}
 {% for choice in question.choice_set.all %}
     <input type="radio" name="choice" id="choice{{ forloop.counter }}" value="{{ choice.id }}" />
@@ -20,4 +20,29 @@
 {% endif %}
 
 </form>
+
+<script>
+    async function submit(e) {
+        e.preventDefault();
+        const form = document.getElementById("form");
+
+        const req = await fetch(form.action, {
+            method: form.method,
+            body: new FormData(form),
+        });
+
+        const params = new URLSearchParams(req.url.split("?")[1]);
+        const isCorrect = params.get("is_correct_answer") === "True";
+
+        alert(`La respuesta${!isCorrect ? ' no ' : ' '}es correcta`);
+
+        form.reset();
+    }
+
+    document.getElementsByName("choice").forEach(c => {
+        c.addEventListener("change", submit);
+    });
+
+    document.getElementById("form").addEventListener("submit", submit);
+</script>
 {% endblock %}
